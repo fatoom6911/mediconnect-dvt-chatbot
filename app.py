@@ -1,44 +1,73 @@
 import streamlit as st
 
-st.set_page_config(page_title='MediConnect | DVT Education', page_icon='💙', layout='centered')
-st.markdown('''<style>
-.stApp {background-color:#f4f8f8;color:#153f48;}
-.block-container {max-width:740px;padding-top:2rem;}
-h1,h2,h3 {color:#104e5a;}
-.stButton > button {border-radius:14px;background:#0d5865;color:white;border:0;}
-[data-testid="stSidebar"] {background:#e9f3f4;}
-</style>''', unsafe_allow_html=True)
-st.title('MediConnect')
-st.caption('Clearer care. Closer connections. | Educational prototype')
-st.warning('University demonstration only. Do not enter real patient information. This is not a clinical service or emergency monitoring system.')
-page = st.sidebar.radio('Explore', ['Welcome', 'DVT Education', 'Ask a Question', 'Healthcare Professional'])
+st.set_page_config(page_title="MediConnect | DVT Education", page_icon="💙", layout="centered", initial_sidebar_state="expanded")
 
-if page == 'Welcome':
-    st.header('Welcome to your care portal')
-    st.write('Choose a section from the sidebar to explore the prototype.')
-    st.info('Patient education, made personal. This version uses prepared responses, not generative AI.')
-elif page == 'DVT Education':
-    st.header('Understanding DVT')
-    st.write('Deep vein thrombosis (DVT) is a blood clot in a deep vein, most often in a leg.')
-    st.subheader('About anticoagulants')
-    st.write('Anticoagulant medicines can help prevent a clot from growing and reduce the chance of new clots forming. Follow the instructions from your healthcare team.')
-    st.info('Content here is placeholder educational material. Replace it with Saeed’s reviewed answers before project evaluation.')
-elif page == 'Ask a Question':
-    st.header('Ask about DVT')
-    st.caption('This is a limited, rule-based demonstration and cannot assess symptoms.')
-    q = st.text_input('Type your question (no personal information)')
-    if st.button('Send') and q.strip():
-        lower = q.lower()
-        red_flags = ['chest pain', 'shortness of breath', 'difficulty breathing', 'coughing blood', 'fainting']
-        if any(x in lower for x in red_flags):
-            st.error('Possible emergency: seek emergency medical assistance immediately. Do not rely on this chatbot.')
-        elif 'what is dvt' in lower or 'deep vein thrombosis' in lower:
-            st.write('DVT is a blood clot in a deep vein, most often in a leg.')
-        elif 'blood thinner' in lower or 'anticoagulant' in lower:
-            st.write('Anticoagulants help prevent clots from growing and new clots from forming. Follow your prescribed treatment plan.')
+st.markdown("""
+<style>
+:root {color-scheme: light;}
+.stApp {background: #f4f8f8; color: #173d46;}
+.block-container {max-width: 790px; padding-top: 2rem; padding-bottom: 4rem;}
+[data-testid="stSidebar"] {background: #103e49;}
+[data-testid="stSidebar"] * {color: #ffffff !important;}
+[data-testid="stSidebar"] [role="radiogroup"] label {background: rgba(255,255,255,.09); border-radius: 12px; padding: 9px 12px; margin-bottom: 7px;}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {background: rgba(255,255,255,.18);}
+h1, h2, h3 {color: #124954 !important; letter-spacing: -.025em;}
+.stButton > button {background: #116171; color: #ffffff; border: none; border-radius: 13px; padding: .65rem 1.4rem; font-weight: 600;}
+.stButton > button:hover {background: #0b4856; color: white; border: none;}
+[data-testid="stTextInput"] input {border-radius: 12px;}
+.hero {background: linear-gradient(140deg,#0c4654,#126d77); color: white; border-radius: 24px; padding: 30px 30px 34px; margin-bottom: 24px;}
+.hero .eyebrow {font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #b8e3e4; font-weight: 700;}
+.hero h1 {color: #fff !important; font-size: 2.55rem; line-height: 1.09; margin: 14px 0;}
+.hero p {color: #e0f3f2; margin: 0;}
+.info-card {background: #fff; border: 1px solid #dce9e9; border-radius: 19px; padding: 22px 24px; margin: 14px 0; box-shadow: 0 3px 12px rgba(16,62,73,.04);}
+.info-card h3 {margin: 0 0 10px; font-size: 1.17rem;}
+.info-card p {margin: 0; color: #44636b;}
+.small-tag {font-size: 12px; color: #4e7c82; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;}
+</style>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("### 💙 MediConnect")
+st.sidebar.caption("DVT patient education · Demo")
+page = st.sidebar.radio("Explore", ["Welcome", "DVT Education", "Ask a Question", "Healthcare Professional"])
+st.sidebar.caption("University prototype · No real patient data")
+
+if page == "Welcome":
+    st.markdown('''<div class="hero"><div class="eyebrow">Healthcare assistant · Patient education</div><h1>Clearer care.<br>Closer connections.</h1><p>Understand your treatment and find trusted educational information in one place.</p></div>''', unsafe_allow_html=True)
+    st.markdown('<div class="small-tag">Welcome to your care portal</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-card"><h3>♡ Continue as Patient</h3><p>Learn about DVT, anticoagulants, and ask common questions using the menu on the left.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-card"><h3>♧ Healthcare Professional</h3><p>Explore the professional-side demonstration placeholder.</p></div>', unsafe_allow_html=True)
+    st.info("Educational demo only. Responses are prepared, not generated by AI.")
+
+elif page == "DVT Education":
+    st.markdown('<div class="small-tag">Patient education</div>', unsafe_allow_html=True)
+    st.header("Understanding DVT")
+    st.markdown('<div class="info-card"><h3>What is DVT?</h3><p>Deep vein thrombosis (DVT) is a blood clot in a deep vein, most often in a leg.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-card"><h3>About anticoagulants</h3><p>Anticoagulant medicines can help prevent a clot from growing and reduce the chance of new clots forming. Follow the instructions from your healthcare team.</p></div>', unsafe_allow_html=True)
+    st.info("Placeholder educational content: replace with Saeed's reviewed answers before project evaluation.")
+
+elif page == "Ask a Question":
+    st.markdown('<div class="small-tag">Patient assistant</div>', unsafe_allow_html=True)
+    st.header("Ask about DVT")
+    st.write("Choose a common topic or type a question below. Please do not enter personal information.")
+    st.caption("This is a limited rule-based demonstration, not medical advice or a symptom assessment tool.")
+    question = st.text_input("Your question", placeholder="Example: What is DVT?")
+    if st.button("Send question") and question.strip():
+        lower = question.lower()
+        red_flags = ["chest pain", "shortness of breath", "difficulty breathing", "coughing blood", "fainting"]
+        if any(term in lower for term in red_flags):
+            st.error("Possible emergency: seek emergency medical assistance immediately. Do not rely on this chatbot.")
+        elif "what is dvt" in lower or "deep vein thrombosis" in lower:
+            st.success("DVT is a blood clot in a deep vein, most often in a leg.")
+        elif "blood thinner" in lower or "anticoagulant" in lower:
+            st.success("Anticoagulants help prevent clots from growing and new clots from forming. Follow your prescribed treatment plan.")
         else:
-            st.info('I do not have a reviewed answer to that question. Please consult a qualified healthcare professional. If symptoms may be urgent, seek prompt medical care.')
-    st.caption('Safety note: Keyword checks can miss serious symptoms and must not be used for real patient triage.')
+            st.info("I do not have a reviewed answer to that question. Please consult a qualified healthcare professional. If symptoms may be urgent, seek prompt medical care.")
+    st.caption("Safety limitation: keyword checks can miss emergencies. Do not use this app for real patient triage.")
+
 else:
-    st.header('Healthcare Professional')
-    st.write('Demonstration placeholder. No patient records, accounts, or clinical messaging are connected.')
+    st.markdown('<div class="small-tag">Professional portal</div>', unsafe_allow_html=True)
+    st.header("Healthcare Professional")
+    st.markdown('<div class="info-card"><h3>Professional dashboard</h3><p>This is a visual demonstration placeholder. No patient records, accounts, or clinical messaging are connected.</p></div>', unsafe_allow_html=True)
+
+st.divider()
+st.caption("University demonstration only · No real patient information · Not a clinical service or emergency monitoring system")
