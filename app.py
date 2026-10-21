@@ -1,91 +1,96 @@
+"""MediConnect — fictional-patient educational prototype. Not for clinical use."""
+import json
+import re
+from difflib import SequenceMatcher
+from pathlib import Path
 import streamlit as st
 
-st.set_page_config(page_title="MediConnect | DVT Education", page_icon="💙", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="MediConnect | Healthcare Assistant", page_icon="💙", layout="wide", initial_sidebar_state="expanded")
 
+NAV = ["Welcome", "Patient Education", "AI-style Chat", "Fictional DVT Case", "Healthcare Professional", "Safety & Privacy"]
+if "page" not in st.session_state:
+    st.session_state.page = "Welcome"
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "consent" not in st.session_state:
+    st.session_state.consent = False
+if "language" not in st.session_state:
+    st.session_state.language = "English"
+
+# Styling inspired by Hessa's teal mobile interface; uses native Streamlit widgets for real navigation.
 st.markdown("""
 <style>
 :root {color-scheme: light;}
-.stApp {background: #f4f8f8; color: #173d46;}
-.block-container {max-width: 790px; padding-top: 2rem; padding-bottom: 4rem;}
-[data-testid="stSidebar"] {background: #103e49;}
-[data-testid="stSidebar"] * {color: #ffffff !important;}
-[data-testid="stSidebar"] [role="radiogroup"] label {background: rgba(255,255,255,.09); border-radius: 12px; padding: 9px 12px; margin-bottom: 7px;}
-[data-testid="stSidebar"] [role="radiogroup"] label:hover {background: rgba(255,255,255,.18);}
-h1, h2, h3 {color: #124954 !important; letter-spacing: -.025em;}
-.stButton > button {background: #116171; color: #ffffff; border: none; border-radius: 13px; padding: .65rem 1.4rem; font-weight: 600;}
-.stButton > button:hover {background: #0b4856; color: white; border: none;}
-[data-testid="stTextInput"] input {border-radius: 12px;}
-.hero {background: linear-gradient(140deg,#0c4654,#126d77); color: white; border-radius: 24px; padding: 30px 30px 34px; margin-bottom: 24px;}
-.hero .eyebrow {font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #b8e3e4; font-weight: 700;}
-.hero h1 {color: #fff !important; font-size: 2.55rem; line-height: 1.09; margin: 14px 0;}
-.hero p {color: #e0f3f2; margin: 0;}
-.info-card {background: #fff; border: 1px solid #dce9e9; border-radius: 19px; padding: 22px 24px; margin: 14px 0; box-shadow: 0 3px 12px rgba(16,62,73,.04);}
-.info-card h3 {margin: 0 0 10px; font-size: 1.17rem;}
-.info-card p {margin: 0; color: #44636b;}
-.small-tag {font-size: 12px; color: #4e7c82; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;}
+html, body, [data-testid="stApp"], .stApp {background:#f5f9fa; color:#153e49;}
+[data-testid="stHeader"] {background:#f5f9fa !important; border-bottom:1px solid #e2edef;}
+[data-testid="stToolbar"] {background:transparent !important;}
+[data-testid="stSidebar"] {background:linear-gradient(175deg,#093946,#126474) !important;}
+[data-testid="stSidebar"] * {color:#fff !important;}
+[data-testid="stSidebar"] button {border:1px solid #5c929a !important; background:#ffffff15 !important;}
+[data-testid="stSidebar"] button:hover {background:#ffffff2c !important;}
+.block-container {max-width:1120px; padding-top:2.0rem; padding-bottom:3rem;}
+h1,h2,h3,p,label {color:#153e49;}
+.hero {background:linear-gradient(125deg,#083d4b,#126f79); border-radius:27px; padding:48px 46px; color:white; margin-bottom:25px; box-shadow:0 14px 30px #093e4b18;}
+.hero * {color:white !important;}
+.hero .eyebrow {font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:800; opacity:.83;}
+.hero h1 {font-size:clamp(35px,4.5vw,62px); line-height:1.08; margin:20px 0 18px; letter-spacing:-2px; font-weight:800;}
+.hero p {font-size:17px; max-width:600px; line-height:1.7;}
+.tile {background:white; border:1px solid #dbe9eb; border-radius:21px; padding:24px; min-height:160px; box-shadow:0 6px 20px #173d4810; margin-bottom:12px;}
+.tile h3 {font-size:21px; margin:4px 0 13px;}
+.tile p {color:#56747b; font-size:15px; line-height:1.6;}
+.kicker {text-transform:uppercase; letter-spacing:1.5px; color:#4a8590; font-weight:800; font-size:12px; margin:14px 0;}
+[data-testid="stButton"] button[kind="primary"], [data-testid="stFormSubmitButton"] button {background:#116675; color:white; border:0; border-radius:12px; min-height:46px; font-weight:700;}
+[data-testid="stButton"] button {border-radius:12px; min-height:44px;}
+[data-testid="stChatMessage"] {background:white; border:1px solid #dce9eb; border-radius:16px; padding:13px; margin:10px 0;}
+[data-testid="stChatInput"] {border-radius:16px;}
+[data-testid="stAlert"] {border-radius:13px;}
+hr {border-color:#d9e7e9;}
+.smallnote {font-size:13px;color:#607e86;line-height:1.7;}
+@media(max-width:700px){.hero{padding:28px 23px;}.hero h1{letter-spacing:-1px;}.block-container{padding-top:1rem;}}
 </style>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("### 💙 MediConnect")
-st.sidebar.caption("DVT patient education · Demo")
-
-if "selected_page" not in st.session_state:
-    st.session_state.selected_page = "Welcome"
-
-page = st.sidebar.radio(
-    "Explore",
-    ["Welcome", "DVT Education", "Ask a Question", "Healthcare Professional"],
-    key="selected_page"
-)
-st.sidebar.caption("University prototype · No real patient data")
-
-if page == "Welcome":
-    st.markdown('''<div class="hero"><div class="eyebrow">Healthcare assistant · Patient education</div><h1>Clearer care.<br>Closer connections.</h1><p>Understand your treatment and find trusted educational information in one place.</p></div>''', unsafe_allow_html=True)
-    st.markdown('<div class="small-tag">Welcome to your care portal</div>', unsafe_allow_html=True)
-    st.markdown('<div class="info-card"><h3>♡ Continue as Patient</h3><p>Learn about DVT, anticoagulants, and ask common questions using the menu on the left.</p></div>', unsafe_allow_html=True)
-    
-    if st.button("Continue as Patient →", use_container_width=True):
-        st.session_state.selected_page = "DVT Education"
-        st.rerun()
-
-    st.markdown('<div class="info-card"><h3>♧ Healthcare Professional</h3><p>Explore the professional-side demonstration placeholder.</p></div>', unsafe_allow_html=True)
-    
-    if st.button("Healthcare Professional →", use_container_width=True):
-        st.session_state.selected_page = "Healthcare Professional"
-        st.rerun()
-
-    st.info("Educational demo only. Responses are prepared, not generated by AI.")
-
-elif page == "DVT Education":
-    st.markdown('<div class="small-tag">Patient education</div>', unsafe_allow_html=True)
-    st.header("Understanding DVT")
-    st.markdown('<div class="info-card"><h3>What is DVT?</h3><p>Deep vein thrombosis (DVT) is a blood clot in a deep vein, most often in a leg.</p></div>', unsafe_allow_html=True)
-    st.markdown('<div class="info-card"><h3>About anticoagulants</h3><p>Anticoagulant medicines can help prevent a clot from growing and reduce the chance of new clots forming. Follow the instructions from your healthcare team.</p></div>', unsafe_allow_html=True)
-    st.info("Placeholder educational content: replace with Saeed's reviewed answers before project evaluation.")
-
-elif page == "Ask a Question":
-    st.markdown('<div class="small-tag">Patient assistant</div>', unsafe_allow_html=True)
-    st.header("Ask about DVT")
-    st.write("Choose a common topic or type a question below. Please do not enter personal information.")
-    st.caption("This is a limited rule-based demonstration, not medical advice or a symptom assessment tool.")
-    question = st.text_input("Your question", placeholder="Example: What is DVT?")
-    if st.button("Send question") and question.strip():
-        lower = question.lower()
-        red_flags = ["chest pain", "shortness of breath", "difficulty breathing", "coughing blood", "fainting"]
-        if any(term in lower for term in red_flags):
-            st.error("Possible emergency: seek emergency medical assistance immediately. Do not rely on this chatbot.")
-        elif "what is dvt" in lower or "deep vein thrombosis" in lower:
-            st.success("DVT is a blood clot in a deep vein, most often in a leg.")
-        elif "blood thinner" in lower or "anticoagulant" in lower:
-            st.success("Anticoagulants help prevent clots from growing and new clots from forming. Follow your prescribed treatment plan.")
-        else:
-            st.info("I do not have a reviewed answer to that question. Please consult a qualified healthcare professional. If symptoms may be urgent, seek prompt medical care.")
-    st.caption("Safety limitation: keyword checks can miss emergencies. Do not use this app for real patient triage.")
-
-else:
-    st.markdown('<div class="small-tag">Professional portal</div>', unsafe_allow_html=True)
-    st.header("Healthcare Professional")
-    st.markdown('<div class="info-card"><h3>Professional dashboard</h3><p>This is a visual demonstration placeholder. No patient records, accounts, or clinical messaging are connected.</p></div>', unsafe_allow_html=True)
-
-st.divider()
-st.caption("University demonstration only · No real patient information · Not a clinical service or emergency monitoring system")
+BANK = [{'number': 1,
+  'question': 'What is the clot in my leg?',
+  'answer': 'It is a clot in the left popliteal deep vein behind your knee, confirmed on your '
+            'ultrasound.',
+  'category': 'education'},
+ {'number': 2,
+  'question': 'Does a blood thinner dissolve it immediately?',
+  'answer': 'Apixaban reduces further clotting. Your body may gradually clear the clot; recovery '
+            'is not immediate.',
+  'category': 'education'},
+ {'number': 3,
+  'question': 'Did my flight definitely cause this?',
+  'answer': 'Long sitting and obesity may contribute, but your history cannot prove one cause.',
+  'category': 'education'},
+ {'number': 4,
+  'question': 'What is the name of my medicine?',
+  'answer': 'It is apixaban, sold as Eliquis. It is an oral anticoagulant that blocks clotting '
+            'factor Xa.',
+  'category': 'education'},
+ {'number': 5,
+  'question': 'How many tablets do I take during the first week?',
+  'answer': 'Your prescription uses 5 mg tablets: take two per dose, twice daily for seven days. '
+            'Check that your pack really contains 5 mg tablets.',
+  'category': 'education'},
+ {'number': 6,
+  'question': 'What changes on day 8?',
+  'answer': 'Take one 5 mg tablet per dose, twice daily, according to your written switch date. If '
+            'the date is unclear, ask the pharmacist before changing it.',
+  'category': 'education'},
+ {'number': 7,
+  'question': 'Do I take it with breakfast?',
+  'answer': 'You may take apixaban with or without food. Keep to the twice-daily schedule your '
+            'team gave you.',
+  'category': 'education'},
+ {'number': 8,
+  'question': 'I forgot one dose today and know which one it was. What does the leaflet say?',
+  'answer': 'Take the missed dose as soon as possible on the same day and resume twice-daily '
+            'dosing. Never double a dose to make up for one. If timing is unclear, ask your '
+            'pharmacist.',
+  'category': 'education'},
+ {'number': 9,
+  'question': 'If the swelling settles, can I stop early?',
+  'answer': 'Feeling better does not mean treatment is complete. Keep to your prescription and '
+            'speak with your clinician before any change. Stopping early can increase clot risk.',
